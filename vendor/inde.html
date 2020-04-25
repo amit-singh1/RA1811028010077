@@ -1,0 +1,279 @@
+<html>
+<head>
+<title>
+AUTOMATA PROGRAMMING
+</title>
+</head>
+<body>
+<br>
+
+<h1><b style="margin-left:400px; margin-top:-15px">INDEX PROGRAMMING PARADIGM</b></h1>
+<br>
+<br>
+<hr>
+
+<h2><u>Definition</u></h2>
+
+<h3>
+Index programming is a programming paradigm in which the program or part of it is thought of as a model of a finite-state machine (FSM) or any other (often more complicated) formal automaton (see automata theory). Sometimes a potentially infinite set of possible states is introduced, and such a set can have a complicated structure, not just an enumeration.
+
+Finite-state machine-based programming is generally the same, but, formally speaking, does not cover all possible variants, as FSM stands for finite-state machine, and automata-based programming does not necessarily employ FSMs in the strict sense.
+
+The following properties are key indicators for automata-based programming:
+
+The time period of the program's execution is clearly separated down to the automaton steps. Each step is effectively an execution of a code section (same for all the steps) which has a single entry point. That section might be divided down to subsections to be executed depending on different states, although this is not necessary.
+Any communication between the automaton steps is only possible via the explicitly noted set of variables named the automaton state. Between any two steps, the program cannot have implicit components of its state, such as local variables' values, return addresses, the current instruction pointer, etc. That is, the state of the whole program, taken at any two moments of entering an automaton step, can only differ in the values of the variables being considered as the automaton state.
+The whole execution of the automata-based code is a cycle of the automaton steps.
+
+Another reason for using the notion of automata-based programming is that the programmer's style of thinking about the program in this technique is very similar to the style of thinking used to solve mathematical tasks using Turing machines, Markov algorithms, etc.
+</h3>
+
+
+<hr>
+
+<h2><u>
+EXAMPLE 1
+</u></h2>
+
+
+<h3>
+#include <ctype.h>
+#include <stdio.h>
+
+enum State {BEFORE, INSIDE, AFTER};
+
+
+int main(void) {
+  int c;
+  enum State s = BEFORE;
+
+  while ((c = getchar()) != EOF) {
+    switch (s) {
+      case BEFORE:
+        if (!isspace(c)) {
+          putchar(c);
+          s = INSIDE;
+        }
+        
+        break;
+      case INSIDE:
+        if (c == '\n') {
+          putchar(c);
+          s = BEFORE;
+        } else if (isspace(c)) {
+          s = AFTER;
+        } else {
+          putchar(c);
+        }
+          
+        break;
+      case AFTER:
+        if (c == '\n') {
+          putchar(c);
+          s = BEFORE;
+        }
+        
+        break;
+    }
+  }
+
+  return 0;
+}
+</h3>
+
+
+
+
+
+<hr>
+
+
+<h2><u>EXAMPLE 2
+</u></h2>
+
+<h3>
+
+#include <ctype.h>
+#include <stdio.h>
+
+enum State {BEFORE, INSIDE, AFTER};
+
+
+void step(enum State* const s, int const c) {
+  switch (*s) {
+    case BEFORE:
+      if (!isspace(c)) {
+        putchar(c);
+        *s = INSIDE;
+      }
+      
+      break;
+    case INSIDE:
+      if (c == '\n') {
+        putchar(c);
+        *s = BEFORE;
+      } else if (isspace(c)) {
+        *s = AFTER;
+      } else {
+        putchar(c);
+      }
+        
+      break;
+    case AFTER:
+      if (c == '\n') {
+        putchar(c);
+        *s = BEFORE;
+      }
+      
+      break;
+  }
+}
+
+
+int main(void) {
+  int c;
+  enum State s = BEFORE;
+
+  while ((c = getchar()) != EOF) {
+    step(&s, c);
+  }
+
+  return 0;
+}
+
+
+
+</h3>
+<hr>
+
+<h2><u>Example 3</u></h2>
+
+<h3>
+
+
+#include <ctype.h>
+#include <stdio.h>
+
+enum State {BEFORE, INSIDE, AFTER};
+
+
+void nop(int const c) {}
+
+
+void print(int const c) {
+  putchar(c);
+}
+
+
+struct Branch {
+  enum State const next_state;
+  void (*action)(int);
+};
+
+
+struct Branch const transitions[3][3] = {
+  //   newline         whitespace         other             Inputs/States
+  {{BEFORE,   &nop}, {BEFORE, &nop}, {INSIDE, &print}},  // before
+  {{BEFORE, &print}, {AFTER,  &nop}, {INSIDE, &print}},  // inside
+  {{BEFORE, &print}, {AFTER,  &nop}, {AFTER,    &nop}}   // after
+};
+
+
+void step(enum State* const s, int const c) {
+  int const row = (*s == BEFORE) ? 0 : (*s == INSIDE) ? 1 : 2;
+  int const column = (c == '\n') ? 0 : isspace(c) ? 1 : 2;
+  struct Branch const* const b = &transitions[row][column];
+  *s = b->next_state;
+  b->action(c);
+}
+
+
+int main(void) {
+  int c;
+  enum State s = BEFORE;
+
+  while ((c = getchar()) != EOF) {
+    step(&s, c);
+  }
+
+  return 0;
+}
+Object-oriented
+If the implementation language supports object-oriented programming, a simple refactoring of the program is to encapsulate the automaton into an object, thus hiding its implementation details. The program in C++ using object-oriented style could look like this:
+
+#include <ctype.h>
+#include <stdio.h>
+
+enum State {BEFORE, INSIDE, AFTER};
+
+
+struct Branch {
+  enum State const next_state;
+  void (*action)(int);
+};
+
+
+class StateMachine {
+  public:
+    StateMachine();
+    void feedChar(int);
+
+  protected:
+    static void nop(int);
+    static void print(int);
+
+  private:
+    enum State _state;
+    static struct Branch const _transitions[3][3];
+};
+
+
+StateMachine::StateMachine(): _state(BEFORE) {}
+
+
+void StateMachine::feedChar(int const c) {
+  int const row = (_state == BEFORE) ? 0 : (_state == INSIDE) ? 1 : 2;
+  int const column = (c == '\n') ? 0 : isspace(c) ? 1 : 2;
+  struct Branch const* const b = &_transitions[row][column];
+  _state = b->next_state;
+  b->action(c);
+}
+
+
+void StateMachine::nop(int const c) {}
+
+
+void StateMachine::print(int const c) {
+  putchar(c);
+}
+
+
+struct Branch const StateMachine::_transitions[3][3] = {
+  //   newline         whitespace         other             Inputs/States
+  {{BEFORE,   &nop}, {BEFORE, &nop}, {INSIDE, &print}},  // before
+  {{BEFORE, &print}, {AFTER,  &nop}, {INSIDE, &print}},  // inside
+  {{BEFORE, &print}, {AFTER,  &nop}, {AFTER,    &nop}}   // after
+};
+
+
+int main() {
+  int c;
+  StateMachine m;
+
+  while ((c = getchar()) != EOF) {
+    m.feedChar(c);
+  }
+
+  return 0;
+}
+
+
+
+
+</h3>
+
+
+
+
+</body>
+</html>
