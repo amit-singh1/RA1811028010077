@@ -1,3 +1,0 @@
-
-
-# OPEN HOMEPAGE.HTML
